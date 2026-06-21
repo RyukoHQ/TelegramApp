@@ -156,15 +156,15 @@ userDataBtn.addEventListener('click', function() {
         let outputHTML = 
             '<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">' +
                 '<div style="flex: 1; min-width: 0;">' +
-                    '<h3 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе</h3>' +
+                    '<h1 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе:</h1>' +
                     '<p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);"><strong>' + (user.first_name || 'Пользователь') + ' ' + (user.last_name || '') + '</strong></p>' +
-                    '<p style="margin: 0; font-size: 14px; color: var(--tg-theme-hint-color, #888);">🆔 ID: ' + user.id + '</p>' +
                 '</div>' +
                 '<div style="flex-shrink: 0;">' +
                     '<img src="' + (user.photo_url || 'https://via.placeholder.com/80') + '" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">' +
                 '</div>' +
             '</div>' +
             '<div style="text-align: left; font-size: 15px; line-height: 1.8;">' +
+				'<div><strong>🆔 ID:</strong> @' + (user.id || '—') + '</div>' +
                 '<div><strong>👤 Username:</strong> @' + (user.username || '—') + '</div>' +
                 '<div><strong>🌐 Язык:</strong> ' + (user.language_code || '—') + '</div>' +
                 '<div><strong>💎 Premium:</strong> ' + (user.is_premium ? 'Да ✅' : 'Нет ❌') + '</div>' +
