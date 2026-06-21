@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ryuko App</title>
+    <!-- Подключаем SDK Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .button {
+            background: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .button:hover {
+            opacity: 0.8;
+        }
+        .button:active {
+            opacity: 0.6;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 12px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border-radius: 8px;
+            border: 1px solid var(--tg-theme-hint-color, #cccccc);
+            min-height: 40px;
+            width: 100%;
+            box-sizing: border-box;
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #888888);
+        }
+        a {
+            color: var(--tg-theme-link-color, #007aff);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚀 Ryuko App</h1>
+        <p>Ваше первое мини-приложение!</p>
+
+        <!-- Кнопка 1: показать уведомление -->
+        <button class="button" id="alertBtn">Показать уведомление</button>
+
+        <!-- Кнопка 2: отправить данные в бот -->
+        <button class="button" id="sendBtn">Отправить данные в бот</button>
+
+        <!-- Блок для вывода информации -->
+        <div class="output" id="output">
+            Нажмите на кнопку...
+        </div>
+
+        <div class="footer">
+            <a href="https://t.me/RyukoHQ_bot" target="_blank">@RyukoHQ_bot</a>
+        </div>
+    </div>
+
+    <script>
+        // Инициализируем Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready(); // Сообщаем, что приложение загружено
+        tg.expand(); // Растягиваем на весь экран
+
+        // Получаем элементы
+        const output = document.getElementById('output');
+        const alertBtn = document.getElementById('alertBtn');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // 1. Кнопка "Показать уведомление" — использует нативное окно Telegram
+        alertBtn.addEventListener('click', function() {
+            tg.showAlert('Привет из мини-приложения! 🎉');
+            output.textContent = '✅ Уведомление показано!';
+        });
+
+        // 2. Кнопка "Отправить данные в бот" — отправляет строку в чат
+        sendBtn.addEventListener('click', function() {
+            // Формируем данные
+            const data = 'Пользователь нажал кнопку отправки!';
+            // Отправляем данные в бот (они появятся в чате)
+            tg.sendData(data);
+            output.textContent = '📤 Данные отправлены в бот: "' + data + '"';
+        });
+
+        // Дополнительно: показываем информацию о пользователе (если есть)
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            output.textContent = '👤 Привет, ' + (user.first_name || 'пользователь') + '!';
+        }
+
+        // Обработка кнопки "Назад" в Telegram (если она есть)
+        tg.onEvent('backButtonClicked', function() {
+            tg.close(); // Закрываем мини-приложение
+        });
+    </script>
+</body>
+</html>
