@@ -134,46 +134,50 @@
             });
         }
 
-        // --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" ---
-        userDataBtn.addEventListener('click', function() {
-            // Получаем объект с данными пользователя и другие параметры запуска
-            const initData = tg.initDataUnsafe;
+		// --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" ---
+		userDataBtn.addEventListener('click', function() {
+			const initData = tg.initDataUnsafe;
 
-            // Проверяем, есть ли данные пользователя
-            if (initData && initData.user) {
-                const user = initData.user;
-                // Формируем строку с ВСЕМИ доступными данными
-                let userInfo = '📋 ВСЕ ДОСТУПНЫЕ ДАННЫЕ О ПОЛЬЗОВАТЕЛЕ:\n\n';
-                userInfo += `👤 ID: ${user.id}\n`;
-                userInfo += `👤 Имя: ${user.first_name || '—'}\n`;
-                userInfo += `👤 Фамилия: ${user.last_name || '—'}\n`;
-                userInfo += `👤 Username: ${user.username || '—'}\n`;
-                userInfo += `🌐 Язык: ${user.language_code || '—'}\n`;
-                userInfo += `💎 Premium: ${user.is_premium ? 'Да' : 'Нет'}\n`;
-                userInfo += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n`;
-                userInfo += `📸 Фото: ${user.photo_url || '—'}\n\n`;
-
-                // Добавляем параметры запуска приложения
+			if (initData && initData.user) {
+				const user = initData.user;
+				
+				// Улучшенное отображение платформы
 				let platformText = tg.platform || '—';
-					if (platformText === 'macos') platformText = 'macOS (десктоп)';
-					if (platformText === 'ios') platformText = 'iOS (iPhone)';
-					if (platformText === 'android') platformText = 'Android';
-                userInfo += `📱 Платформа: ${platformText}\n`;
-                userInfo += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
-                userInfo += `📋 Хэш: ${initData.hash || '—'}\n`;
-                userInfo += `🆔 Query ID: ${initData.query_id || '—'}\n`;
-                userInfo += `🔗 Start Param: ${initData.start_param || '—'}\n`;
-                userInfo += `💬 Chat Type: ${initData.chat_type || '—'}\n`;
-                userInfo += `📝 Chat Instance: ${initData.chat_instance || '—'}\n`;
-                userInfo += `📦 Версия WebApp: ${tg.version || '—'}\n`;
-                userInfo += `🎨 Тема: ${tg.colorScheme || '—'}\n`;
+				const platformMap = {
+					'ios': 'iOS (iPhone)',
+					'android': 'Android',
+					'macos': 'macOS (десктоп)',
+					'web': 'Веб-версия (браузер)',
+					'unknown': 'Неизвестно'
+				};
+				platformText = platformMap[platformText] || platformText;
 
-                // Выводим в блок output
-                output.textContent = userInfo;
-            } else {
-                output.textContent = '❌ Не удалось получить данные пользователя.';
-            }
-        });
+				let userInfo = '📋 ВСЕ ДАННЫЕ О ПОЛЬЗОВАТЕЛЕ:\n\n';
+				userInfo += `👤 ID: ${user.id}\n`;
+				userInfo += `👤 Имя: ${user.first_name || '—'}\n`;
+				userInfo += `👤 Фамилия: ${user.last_name || '—'}\n`;
+				userInfo += `👤 Username: ${user.username || '—'}\n`;
+				userInfo += `🌐 Язык: ${user.language_code || '—'}\n`;
+				userInfo += `💎 Premium: ${user.is_premium ? 'Да' : 'Нет'}\n`;
+				userInfo += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n`;
+				userInfo += `📸 Фото: ${user.photo_url || '—'}\n\n`;
+
+				userInfo += `📱 Платформа: ${platformText}\n`;
+				userInfo += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
+				userInfo += `📋 Хэш: ${initData.hash || '—'}\n`;
+				userInfo += `🆔 Query ID: ${initData.query_id || '—'}\n`;
+				userInfo += `🔗 Start Param: ${initData.start_param || '—'}\n`;
+				userInfo += `💬 Chat Type: ${initData.chat_type || '—'}\n`;
+				userInfo += `📝 Chat Instance: ${initData.chat_instance || '—'}\n`;
+				userInfo += `📦 Версия WebApp: ${tg.version || '—'}\n`;
+				userInfo += `🎨 Тема: ${tg.colorScheme || '—'}\n`;
+
+				output.textContent = userInfo;
+			} else {
+				output.textContent = '❌ Не удалось получить данные пользователя.';
+			}
+		});
+
 
         // --- КНОПКА ОТПРАВКИ ДАННЫХ В БОТ (оставляем для теста) ---
         sendBtn.addEventListener('click', function() {
