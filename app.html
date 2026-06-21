@@ -61,16 +61,14 @@
             width: 100%;
             box-sizing: border-box;
             color: var(--tg-theme-text-color, #000000);
-        }
-        .footer {
-            margin-top: 20px;
+            text-align: left;
             font-size: 14px;
-            color: var(--tg-theme-hint-color, #888888);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-        a {
-            color: var(--tg-theme-link-color, #007aff);
-            text-decoration: none;
-        }
+        .footer { margin-top: 20px; font-size: 14px; color: var(--tg-theme-hint-color, #888888); }
+        a { color: var(--tg-theme-link-color, #007aff); text-decoration: none; }
     </style>
 </head>
 <body>
@@ -78,13 +76,12 @@
         <h1>🚀 Ryuko App</h1>
         <p>Ваше первое мини-приложение!</p>
 
-        <!-- Кнопка 1: показать уведомление -->
-        <button class="button" id="alertBtn">Показать уведомление</button>
+        <!-- Новая кнопка для показа данных пользователя -->
+        <button class="button" id="userDataBtn">Показать мои данные</button>
 
-        <!-- Кнопка 2: отправить данные в бот -->
+        <!-- Кнопка отправки данных в бот (можно оставить для теста) -->
         <button class="button" id="sendBtn">Отправить данные в бот</button>
 
-        <!-- Блок для вывода информации -->
         <div class="output" id="output">
             Нажмите на кнопку...
         </div>
@@ -97,38 +94,93 @@
     <script>
         // Инициализируем Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.ready(); // Сообщаем, что приложение загружено
-        tg.expand(); // Растягиваем на весь экран
+        tg.ready();
+        tg.expand();
 
-        // Получаем элементы
         const output = document.getElementById('output');
-        const alertBtn = document.getElementById('alertBtn');
+        const userDataBtn = document.getElementById('userDataBtn');
         const sendBtn = document.getElementById('sendBtn');
 
-        // 1. Кнопка "Показать уведомление" — использует нативное окно Telegram
-        alertBtn.addEventListener('click', function() {
-            tg.showAlert('Привет из мини-приложения! 🎉');
-            output.textContent = '✅ Уведомление показано!';
+        // --- ЗАПРОС БИОМЕТРИИ ПРИ ЗАГРУЗКЕ ---
+        if (tg.BiometryManager && tg.BiometryManager.isSupported) {
+            tg.BiometryManager.requestAccess({ reason: 'Для входа в приложение' }, (isAccessGranted) => {
+                if (isAccessGranted) {
+                    tg.BiometryManager.authenticate({ reason: 'Подтвердите вашу личность' }, (isAuthenticated) => {
+                        if (isAuthenticated) {
+                            output.textContent = '✅ Биометрия пройдена. Добро пожаловать!';
+                        } else {
+                            output.textContent = '❌ Биометрия не пройдена. Доступ ограничен.';
+                            // Здесь можно заблокировать интерфейс или закрыть приложение
+                        }
+                    });
+                } else {
+                    output.textContent = '❌ Доступ к биометрии не предоставлен.';
+                    // Можно попросить ввести пароль или использовать другой метод
+                }
+            });
+        } else {
+            // Если биометрия не поддерживается, попросить ввести пароль
+            // В реальном приложении здесь можно показать поле для ввода пароля
+            tg.showPopup({
+                title: 'Вход',
+                message: 'Введите ваш секретный пароль для доступа к приложению.',
+                buttons: [{ type: 'ok', text: 'Войти' }]
+            }, (buttonId) => {
+                // Здесь будет логика проверки пароля
+                if (buttonId === 'ok') {
+                    // Не реализовано для примера
+                    output.textContent = '⚠️ Функция проверки пароля требует настройки на сервере.';
+                }
+            });
+        }
+
+        // --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" ---
+        userDataBtn.addEventListener('click', function() {
+            // Получаем объект с данными пользователя и другие параметры запуска
+            const initData = tg.initDataUnsafe;
+
+            // Проверяем, есть ли данные пользователя
+            if (initData && initData.user) {
+                const user = initData.user;
+                // Формируем строку с ВСЕМИ доступными данными
+                let userInfo = '📋 ВСЕ ДОСТУПНЫЕ ДАННЫЕ О ПОЛЬЗОВАТЕЛЕ:\n\n';
+                userInfo += `👤 ID: ${user.id}\n`;
+                userInfo += `👤 Имя: ${user.first_name || '—'}\n`;
+                userInfo += `👤 Фамилия: ${user.last_name || '—'}\n`;
+                userInfo += `👤 Username: ${user.username || '—'}\n`;
+                userInfo += `🌐 Язык: ${user.language_code || '—'}\n`;
+                userInfo += `💎 Premium: ${user.is_premium ? 'Да' : 'Нет'}\n`;
+                userInfo += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n`;
+                userInfo += `📸 Фото: ${user.photo_url || '—'}\n\n`;
+
+                // Добавляем параметры запуска приложения
+                userInfo += `📱 Платформа: ${tg.platform || '—'}\n`;
+                userInfo += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
+                userInfo += `📋 Хэш: ${initData.hash || '—'}\n`;
+                userInfo += `🆔 Query ID: ${initData.query_id || '—'}\n`;
+                userInfo += `🔗 Start Param: ${initData.start_param || '—'}\n`;
+                userInfo += `💬 Chat Type: ${initData.chat_type || '—'}\n`;
+                userInfo += `📝 Chat Instance: ${initData.chat_instance || '—'}\n`;
+                userInfo += `📦 Версия WebApp: ${tg.version || '—'}\n`;
+                userInfo += `🎨 Тема: ${tg.colorScheme || '—'}\n`;
+
+                // Выводим в блок output
+                output.textContent = userInfo;
+            } else {
+                output.textContent = '❌ Не удалось получить данные пользователя.';
+            }
         });
 
-        // 2. Кнопка "Отправить данные в бот" — отправляет строку в чат
+        // --- КНОПКА ОТПРАВКИ ДАННЫХ В БОТ (оставляем для теста) ---
         sendBtn.addEventListener('click', function() {
-            // Формируем данные
             const data = 'Пользователь нажал кнопку отправки!';
-            // Отправляем данные в бот (они появятся в чате)
             tg.sendData(data);
             output.textContent = '📤 Данные отправлены в бот: "' + data + '"';
         });
 
-        // Дополнительно: показываем информацию о пользователе (если есть)
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            output.textContent = '👤 Привет, ' + (user.first_name || 'пользователь') + '!';
-        }
-
-        // Обработка кнопки "Назад" в Telegram (если она есть)
+        // --- ОБРАБОТКА НАЖАТИЯ НАЗАД ---
         tg.onEvent('backButtonClicked', function() {
-            tg.close(); // Закрываем мини-приложение
+            tg.close();
         });
     </script>
 </body>
