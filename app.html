@@ -152,49 +152,38 @@ userDataBtn.addEventListener('click', function() {
         };
         platformText = platformMap[platformText] || platformText;
 
-        // Формируем HTML-структуру
-        let outputHTML = `
-            <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
-                <!-- Левая часть с текстом -->
-                <div style="flex: 1; min-width: 0;">
-                    <h2 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе</h2>
-                    <p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);">
-                        <strong>${user.first_name || 'Пользователь'} ${user.last_name || ''}</strong>
-                    </p>
-                    <p style="margin: 0; font-size: 14px; color: var(--tg-theme-hint-color, #888);">
-                        🆔 ID: ${user.id}
-                    </p>
-                </div>
-                <!-- Правая часть с фото -->
-                <div style="flex-shrink: 0;">
-                    <img src="${user.photo_url || 'https://via.placeholder.com/80'}" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">
-                </div>
-            </div>
-            
-            <!-- Остальные данные в одну колонку -->
-            <div style="text-align: left; font-size: 15px; line-height: 1.8;">
-                <div><strong>👤 Username:</strong> @${user.username || '—'}</div>
-                <div><strong>🌐 Язык:</strong> ${user.language_code || '—'}</div>
-                <div><strong>💎 Premium:</strong> ${user.is_premium ? 'Да ✅' : 'Нет ❌'}</div>
-                <div><strong>🤖 Бот:</strong> ${user.is_bot ? 'Да' : 'Нет'}</div>
-                <div><strong>📱 Платформа:</strong> ${platformText}</div>
-                <div><strong>📅 Дата запуска:</strong> ${new Date(initData.auth_date * 1000).toLocaleString()}</div>
-                <div><strong>📦 Версия WebApp:</strong> ${tg.version || '—'}</div>
-                <div><strong>🎨 Тема:</strong> ${tg.colorScheme || '—'}</div>
-            </div>
-            
-            <!-- Техническая информация (свернутая) -->
-            <details style="margin-top: 15px; color: var(--tg-theme-hint-color, #888); font-size: 13px;">
-                <summary style="cursor: pointer;">🔧 Техническая информация</summary>
-                <pre style="white-space: pre-wrap; word-break: break-all; background: var(--tg-theme-bg-color, #fff); padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #ccc); font-size: 12px; margin-top: 8px;">
-📋 Хэш: ${initData.hash || '—'}
-🆔 Query ID: ${initData.query_id || '—'}
-🔗 Start Param: ${initData.start_param || '—'}
-💬 Chat Type: ${initData.chat_type || '—'}
-📝 Chat Instance: ${initData.chat_instance || '—'}
-                </pre>
-            </details>
-        `;
+        // Формируем HTML-структуру (без лишних пробелов)
+        let outputHTML = 
+            '<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">' +
+                '<div style="flex: 1; min-width: 0;">' +
+                    '<h2 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе</h2>' +
+                    '<p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);"><strong>' + (user.first_name || 'Пользователь') + ' ' + (user.last_name || '') + '</strong></p>' +
+                    '<p style="margin: 0; font-size: 14px; color: var(--tg-theme-hint-color, #888);">🆔 ID: ' + user.id + '</p>' +
+                '</div>' +
+                '<div style="flex-shrink: 0;">' +
+                    '<img src="' + (user.photo_url || 'https://via.placeholder.com/80') + '" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">' +
+                '</div>' +
+            '</div>' +
+            '<div style="text-align: left; font-size: 15px; line-height: 1.8;">' +
+                '<div><strong>👤 Username:</strong> @' + (user.username || '—') + '</div>' +
+                '<div><strong>🌐 Язык:</strong> ' + (user.language_code || '—') + '</div>' +
+                '<div><strong>💎 Premium:</strong> ' + (user.is_premium ? 'Да ✅' : 'Нет ❌') + '</div>' +
+                '<div><strong>🤖 Бот:</strong> ' + (user.is_bot ? 'Да' : 'Нет') + '</div>' +
+                '<div><strong>📱 Платформа:</strong> ' + platformText + '</div>' +
+                '<div><strong>📅 Дата запуска:</strong> ' + new Date(initData.auth_date * 1000).toLocaleString() + '</div>' +
+                '<div><strong>📦 Версия WebApp:</strong> ' + (tg.version || '—') + '</div>' +
+                '<div><strong>🎨 Тема:</strong> ' + (tg.colorScheme || '—') + '</div>' +
+            '</div>' +
+            '<details style="margin-top: 15px; color: var(--tg-theme-hint-color, #888); font-size: 13px;">' +
+                '<summary style="cursor: pointer;">🔧 Техническая информация</summary>' +
+                '<pre style="white-space: pre-wrap; word-break: break-all; background: var(--tg-theme-bg-color, #fff); padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #ccc); font-size: 12px; margin-top: 8px;">' +
+'📋 Хэш: ' + (initData.hash || '—') + '\n' +
+'🆔 Query ID: ' + (initData.query_id || '—') + '\n' +
+'🔗 Start Param: ' + (initData.start_param || '—') + '\n' +
+'💬 Chat Type: ' + (initData.chat_type || '—') + '\n' +
+'📝 Chat Instance: ' + (initData.chat_instance || '—') +
+                '</pre>' +
+            '</details>';
 
         // Вставляем в блок output
         output.innerHTML = outputHTML;
