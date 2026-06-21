@@ -135,63 +135,74 @@
         }
 
 		// --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" ---
-		userDataBtn.addEventListener('click', function() {
-			const initData = tg.initDataUnsafe;
+userDataBtn.addEventListener('click', function() {
+    const initData = tg.initDataUnsafe;
 
-			if (initData && initData.user) {
-				const user = initData.user;
-				
-				// Улучшенное отображение платформы
-				let platformText = tg.platform || '—';
-				const platformMap = {
-					'ios': 'iOS (iPhone)',
-					'android': 'Android',
-					'macos': 'macOS (десктоп)',
-					'web': 'Веб-версия (браузер)',
-					'unknown': 'Неизвестно'
-				};
-				platformText = platformMap[platformText] || platformText;
+    if (initData && initData.user) {
+        const user = initData.user;
+        
+        // Улучшенное отображение платформы
+        let platformText = tg.platform || '—';
+        const platformMap = {
+            'ios': 'iOS (iPhone)',
+            'android': 'Android',
+            'macos': 'macOS (десктоп)',
+            'web': 'Веб-версия (браузер)',
+            'unknown': 'Неизвестно'
+        };
+        platformText = platformMap[platformText] || platformText;
 
-				// --- НАЧАЛО: ФОРМИРУЕМ ВЫВОД С ФОТО ВНАЧАЛЕ ---
-				let outputHTML = ''; // Используем HTML вместо plain text
+        // Формируем HTML-структуру
+        let outputHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
+                <!-- Левая часть с текстом -->
+                <div style="flex: 1; min-width: 0;">
+                    <h2 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе</h2>
+                    <p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);">
+                        <strong>${user.first_name || 'Пользователь'} ${user.last_name || ''}</strong>
+                    </p>
+                    <p style="margin: 0; font-size: 14px; color: var(--tg-theme-hint-color, #888);">
+                        🆔 ID: ${user.id}
+                    </p>
+                </div>
+                <!-- Правая часть с фото -->
+                <div style="flex-shrink: 0;">
+                    <img src="${user.photo_url || 'https://via.placeholder.com/80'}" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">
+                </div>
+            </div>
+            
+            <!-- Остальные данные в одну колонку -->
+            <div style="text-align: left; font-size: 15px; line-height: 1.8;">
+                <div><strong>👤 Username:</strong> @${user.username || '—'}</div>
+                <div><strong>🌐 Язык:</strong> ${user.language_code || '—'}</div>
+                <div><strong>💎 Premium:</strong> ${user.is_premium ? 'Да ✅' : 'Нет ❌'}</div>
+                <div><strong>🤖 Бот:</strong> ${user.is_bot ? 'Да' : 'Нет'}</div>
+                <div><strong>📱 Платформа:</strong> ${platformText}</div>
+                <div><strong>📅 Дата запуска:</strong> ${new Date(initData.auth_date * 1000).toLocaleString()}</div>
+                <div><strong>📦 Версия WebApp:</strong> ${tg.version || '—'}</div>
+                <div><strong>🎨 Тема:</strong> ${tg.colorScheme || '—'}</div>
+            </div>
+            
+            <!-- Техническая информация (свернутая) -->
+            <details style="margin-top: 15px; color: var(--tg-theme-hint-color, #888); font-size: 13px;">
+                <summary style="cursor: pointer;">🔧 Техническая информация</summary>
+                <pre style="white-space: pre-wrap; word-break: break-all; background: var(--tg-theme-bg-color, #fff); padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #ccc); font-size: 12px; margin-top: 8px;">
+📋 Хэш: ${initData.hash || '—'}
+🆔 Query ID: ${initData.query_id || '—'}
+🔗 Start Param: ${initData.start_param || '—'}
+💬 Chat Type: ${initData.chat_type || '—'}
+📝 Chat Instance: ${initData.chat_instance || '—'}
+                </pre>
+            </details>
+        `;
 
-				// 1. Добавляем фото в самом начале (если есть)
-				if (user.photo_url) {
-					outputHTML += `<div style="text-align: center; margin-bottom: 15px;">
-						<img src="${user.photo_url}" alt="Фото пользователя" style="border-radius: 50%; width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">
-					</div>`;
-				}
+        // Вставляем в блок output
+        output.innerHTML = outputHTML;
 
-				// 2. Добавляем все остальные данные в виде текста
-				let userInfo = '📋 ВСЕ ДАННЫЕ О ПОЛЬЗОВАТЕЛЕ:\n\n';
-				userInfo += `👤 ID: ${user.id}\n`;
-				userInfo += `👤 Имя: ${user.first_name || '—'}\n`;
-				userInfo += `👤 Фамилия: ${user.last_name || '—'}\n`;
-				userInfo += `👤 Username: ${user.username || '—'}\n`;
-				userInfo += `🌐 Язык: ${user.language_code || '—'}\n`;
-				userInfo += `💎 Premium: ${user.is_premium ? 'Да' : 'Нет'}\n`;
-				userInfo += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n\n`; // Убрал фото из текста
-
-				userInfo += `📱 Платформа: ${platformText}\n`;
-				userInfo += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
-				userInfo += `📋 Хэш: ${initData.hash || '—'}\n`;
-				userInfo += `🆔 Query ID: ${initData.query_id || '—'}\n`;
-				userInfo += `🔗 Start Param: ${initData.start_param || '—'}\n`;
-				userInfo += `💬 Chat Type: ${initData.chat_type || '—'}\n`;
-				userInfo += `📝 Chat Instance: ${initData.chat_instance || '—'}\n`;
-				userInfo += `📦 Версия WebApp: ${tg.version || '—'}\n`;
-				userInfo += `🎨 Тема: ${tg.colorScheme || '—'}\n`;
-
-				// 3. Объединяем: сначала HTML с фото, потом текст
-				outputHTML += `<pre style="white-space: pre-wrap; word-break: break-all; margin: 0; font-family: inherit;">${userInfo}</pre>`;
-				
-				// 4. Вставляем всё в блок output
-				output.innerHTML = outputHTML;
-
-			} else {
-				output.textContent = '❌ Не удалось получить данные пользователя.';
-			}
-		});
+    } else {
+        output.textContent = '❌ Не удалось получить данные пользователя.';
+    }
+});
 
 
 
