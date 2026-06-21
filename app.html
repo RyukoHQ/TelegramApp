@@ -152,6 +152,17 @@
 				};
 				platformText = platformMap[platformText] || platformText;
 
+				// --- НАЧАЛО: ФОРМИРУЕМ ВЫВОД С ФОТО ВНАЧАЛЕ ---
+				let outputHTML = ''; // Используем HTML вместо plain text
+
+				// 1. Добавляем фото в самом начале (если есть)
+				if (user.photo_url) {
+					outputHTML += `<div style="text-align: center; margin-bottom: 15px;">
+						<img src="${user.photo_url}" alt="Фото пользователя" style="border-radius: 50%; width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">
+					</div>`;
+				}
+
+				// 2. Добавляем все остальные данные в виде текста
 				let userInfo = '📋 ВСЕ ДАННЫЕ О ПОЛЬЗОВАТЕЛЕ:\n\n';
 				userInfo += `👤 ID: ${user.id}\n`;
 				userInfo += `👤 Имя: ${user.first_name || '—'}\n`;
@@ -159,8 +170,7 @@
 				userInfo += `👤 Username: ${user.username || '—'}\n`;
 				userInfo += `🌐 Язык: ${user.language_code || '—'}\n`;
 				userInfo += `💎 Premium: ${user.is_premium ? 'Да' : 'Нет'}\n`;
-				userInfo += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n`;
-				userInfo += `📸 Фото: ${user.photo_url || '—'}\n\n`;
+				userInfo += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n\n`; // Убрал фото из текста
 
 				userInfo += `📱 Платформа: ${platformText}\n`;
 				userInfo += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
@@ -172,11 +182,17 @@
 				userInfo += `📦 Версия WebApp: ${tg.version || '—'}\n`;
 				userInfo += `🎨 Тема: ${tg.colorScheme || '—'}\n`;
 
-				output.textContent = userInfo;
+				// 3. Объединяем: сначала HTML с фото, потом текст
+				outputHTML += `<pre style="white-space: pre-wrap; word-break: break-all; margin: 0; font-family: inherit;">${userInfo}</pre>`;
+				
+				// 4. Вставляем всё в блок output
+				output.innerHTML = outputHTML;
+
 			} else {
 				output.textContent = '❌ Не удалось получить данные пользователя.';
 			}
 		});
+
 
 
         // --- КНОПКА ОТПРАВКИ ДАННЫХ В БОТ (оставляем для теста) ---
