@@ -158,7 +158,7 @@
 					if (platformText === 'macos') platformText = 'macOS (десктоп)';
 					if (platformText === 'ios') platformText = 'iOS (iPhone)';
 					if (platformText === 'android') platformText = 'Android';
-                userInfo += `📱 Платформа: platformText\n`;
+                userInfo += `📱 Платформа: ${platformText}\n`;
                 userInfo += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
                 userInfo += `📋 Хэш: ${initData.hash || '—'}\n`;
                 userInfo += `🆔 Query ID: ${initData.query_id || '—'}\n`;
