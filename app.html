@@ -99,9 +99,8 @@
 
         const output = document.getElementById('output');
         const userDataBtn = document.getElementById('userDataBtn');
-        const sendBtn = document.getElementById('sendBtn');
 
-        // --- ЗАПРОС БИОМЕТРИИ ПРИ ЗАГРУЗКЕ ---
+        // --- ЗАПРОС БИОМЕТРИИ ПРИ ЗАГРУЗКЕ (оставляем как есть) ---
         if (tg.BiometryManager && tg.BiometryManager.isSupported) {
             tg.BiometryManager.requestAccess({ reason: 'Для входа в приложение' }, (isAccessGranted) => {
                 if (isAccessGranted) {
@@ -110,102 +109,111 @@
                             output.textContent = '✅ Биометрия пройдена. Добро пожаловать!';
                         } else {
                             output.textContent = '❌ Биометрия не пройдена. Доступ ограничен.';
-                            // Здесь можно заблокировать интерфейс или закрыть приложение
                         }
                     });
                 } else {
                     output.textContent = '❌ Доступ к биометрии не предоставлен.';
-                    // Можно попросить ввести пароль или использовать другой метод
                 }
             });
         } else {
-            // Если биометрия не поддерживается, попросить ввести пароль
-            // В реальном приложении здесь можно показать поле для ввода пароля
             tg.showPopup({
                 title: 'Вход',
                 message: 'Введите ваш секретный пароль для доступа к приложению.',
                 buttons: [{ type: 'ok', text: 'Войти' }]
             }, (buttonId) => {
-                // Здесь будет логика проверки пароля
                 if (buttonId === 'ok') {
-                    // Не реализовано для примера
                     output.textContent = '⚠️ Функция проверки пароля требует настройки на сервере.';
                 }
             });
         }
 
-		// --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" ---
-userDataBtn.addEventListener('click', function() {
-    const initData = tg.initDataUnsafe;
+        // --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" (ОБНОВЛЕНА) ---
+        userDataBtn.addEventListener('click', function() {
+            const initData = tg.initDataUnsafe;
 
-    if (initData && initData.user) {
-        const user = initData.user;
-        
-        // Улучшенное отображение платформы
-        let platformText = tg.platform || '—';
-        const platformMap = {
-            'ios': 'iOS (iPhone)',
-            'android': 'Android',
-            'macos': 'macOS (десктоп)',
-            'web': 'Веб-версия (браузер)',
-            'unknown': 'Неизвестно'
-        };
-        platformText = platformMap[platformText] || platformText;
+            if (initData && initData.user) {
+                const user = initData.user;
+                
+                // Отображение платформы
+                let platformText = tg.platform || '—';
+                const platformMap = {
+                    'ios': 'iOS (iPhone)',
+                    'android': 'Android',
+                    'macos': 'macOS (десктоп)',
+                    'web': 'Веб-версия (браузер)',
+                    'unknown': 'Неизвестно'
+                };
+                platformText = platformMap[platformText] || platformText;
 
-        // Формируем HTML-структуру (без лишних пробелов)
-        let outputHTML = 
-            '<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">' +
-                '<div style="flex: 1; min-width: 0;">' +
-                    '<h3 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе:</h3>' +
-                    '<p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);">' + (user.first_name || 'Пользователь') + ' ' + (user.last_name || '') + '</p>' +
-                '</div>' +
-                '<div style="flex-shrink: 0;">' +
-                    '<img src="' + (user.photo_url || 'https://via.placeholder.com/80') + '" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">' +
-                '</div>' +
-            '</div>' +
-            '<div style="text-align: left; font-size: 15px; line-height: 1.8;">' +
-				'<div><strong>🆔 ID:</strong> @' + (user.id || '—') + '</div>' +
-                '<div><strong>👤 Username:</strong> @' + (user.username || '—') + '</div>' +
-                '<div><strong>🌐 Язык:</strong> ' + (user.language_code || '—') + '</div>' +
-                '<div><strong>💎 Premium:</strong> ' + (user.is_premium ? 'Да ✅' : 'Нет ❌') + '</div>' +
-                '<div><strong>🤖 Бот:</strong> ' + (user.is_bot ? 'Да' : 'Нет') + '</div>' +
-                '<div><strong>📱 Платформа:</strong> ' + platformText + '</div>' +
-                '<div><strong>📅 Дата запуска:</strong> ' + new Date(initData.auth_date * 1000).toLocaleString() + '</div>' +
-                '<div><strong>📦 Версия WebApp:</strong> ' + (tg.version || '—') + '</div>' +
-                '<div><strong>🎨 Тема:</strong> ' + (tg.colorScheme || '—') + '</div>' +
-            '</div>' +
-            '<details style="margin-top: 15px; color: var(--tg-theme-hint-color, #888); font-size: 13px;">' +
-                '<summary style="cursor: pointer;">🔧 Техническая информация</summary>' +
-                '<pre style="white-space: pre-wrap; word-break: break-all; background: var(--tg-theme-bg-color, #fff); padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #ccc); font-size: 12px; margin-top: 8px;">' +
-'📋 Хэш: ' + (initData.hash || '—') + '\n' +
-'🆔 Query ID: ' + (initData.query_id || '—') + '\n' +
-'🔗 Start Param: ' + (initData.start_param || '—') + '\n' +
-'💬 Chat Type: ' + (initData.chat_type || '—') + '\n' +
-'📝 Chat Instance: ' + (initData.chat_instance || '—') +
-                '</pre>' +
-            '</details>';
+                // --- ФОРМИРУЕМ ДАННЫЕ ДЛЯ ОТПРАВКИ (текст) ---
+                let userInfoText = '📋 Данные пользователя:\n\n';
+                userInfoText += `👤 Имя: ${user.first_name || 'Пользователь'} ${user.last_name || ''}\n`;
+                userInfoText += `🆔 ID: ${user.id}\n`;
+                userInfoText += `👤 Username: @${user.username || '—'}\n`;
+                userInfoText += `🌐 Язык: ${user.language_code || '—'}\n`;
+                userInfoText += `💎 Premium: ${user.is_premium ? 'Да ✅' : 'Нет ❌'}\n`;
+                userInfoText += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n`;
+                userInfoText += `📱 Платформа: ${platformText}\n`;
+                userInfoText += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
 
-        // Вставляем в блок output
-        output.innerHTML = outputHTML;
+                // --- ФОРМИРУЕМ HTML ДЛЯ ОТОБРАЖЕНИЯ (КАРТОЧКА) ---
+                let outputHTML = 
+                    '<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">' +
+                        '<div style="flex: 1; min-width: 0;">' +
+                            '<h3 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе:</h3>' +
+                            '<p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);">' + (user.first_name || 'Пользователь') + ' ' + (user.last_name || '') + '</p>' +
+                        '</div>' +
+                        '<div style="flex-shrink: 0;">' +
+                            '<img src="' + (user.photo_url || 'https://via.placeholder.com/80') + '" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="text-align: left; font-size: 15px; line-height: 1.8;">' +
+                        '<div><strong>🆔 ID:</strong> ' + (user.id || '—') + '</div>' +
+                        '<div><strong>👤 Username:</strong> @' + (user.username || '—') + '</div>' +
+                        '<div><strong>🌐 Язык:</strong> ' + (user.language_code || '—') + '</div>' +
+                        '<div><strong>💎 Premium:</strong> ' + (user.is_premium ? 'Да ✅' : 'Нет ❌') + '</div>' +
+                        '<div><strong>🤖 Бот:</strong> ' + (user.is_bot ? 'Да' : 'Нет') + '</div>' +
+                        '<div><strong>📱 Платформа:</strong> ' + platformText + '</div>' +
+                        '<div><strong>📅 Дата запуска:</strong> ' + new Date(initData.auth_date * 1000).toLocaleString() + '</div>' +
+                        '<div><strong>📦 Версия WebApp:</strong> ' + (tg.version || '—') + '</div>' +
+                        '<div><strong>🎨 Тема:</strong> ' + (tg.colorScheme || '—') + '</div>' +
+                    '</div>' +
+                    // --- НОВАЯ КНОПКА ДЛЯ ОТПРАВКИ ДАННЫХ В БОТ (внутри карточки) ---
+                    '<button id="sendToBotBtn" style="background: var(--tg-theme-button-color, #007aff); color: var(--tg-theme-button-text-color, #ffffff); border: none; padding: 12px 24px; border-radius: 12px; font-size: 18px; font-weight: 600; width: 100%; margin-top: 15px; cursor: pointer; transition: opacity 0.2s;">📤 Отправить данные в бот</button>' +
+                    '<details style="margin-top: 15px; color: var(--tg-theme-hint-color, #888); font-size: 13px;">' +
+                        '<summary style="cursor: pointer;">🔧 Техническая информация</summary>' +
+                        '<pre style="white-space: pre-wrap; word-break: break-all; background: var(--tg-theme-bg-color, #fff); padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #ccc); font-size: 12px; margin-top: 8px;">' +
+                            '📋 Хэш: ' + (initData.hash || '—') + '\n' +
+                            '🆔 Query ID: ' + (initData.query_id || '—') + '\n' +
+                            '🔗 Start Param: ' + (initData.start_param || '—') + '\n' +
+                            '💬 Chat Type: ' + (initData.chat_type || '—') + '\n' +
+                            '📝 Chat Instance: ' + (initData.chat_instance || '—') +
+                        '</pre>' +
+                    '</details>';
 
-    } else {
-        output.textContent = '❌ Не удалось получить данные пользователя.';
-    }
-});
+                // Вставляем карточку в блок output
+                output.innerHTML = outputHTML;
 
+                // --- НАВЕШИВАЕМ ОБРАБОТЧИК НА НОВУЮ КНОПКУ ---
+                const sendBtn = document.getElementById('sendToBotBtn');
+                if (sendBtn) {
+                    sendBtn.addEventListener('click', function() {
+                        // Отправляем в бот собранный текст с данными
+                        tg.sendData(userInfoText);
+                        // Показываем уведомление об отправке
+                        tg.showAlert('✅ Данные отправлены в бот! Проверьте чат.');
+                    });
+                }
 
-
-        // --- КНОПКА ОТПРАВКИ ДАННЫХ В БОТ (оставляем для теста) ---
-        sendBtn.addEventListener('click', function() {
-            const data = 'Пользователь нажал кнопку отправки!';
-            tg.sendData(data);
-            output.textContent = '📤 Данные отправлены в бот: "' + data + '"';
+            } else {
+                output.textContent = '❌ Не удалось получить данные пользователя.';
+            }
         });
 
         // --- ОБРАБОТКА НАЖАТИЯ НАЗАД ---
         tg.onEvent('backButtonClicked', function() {
             tg.close();
         });
-    </script>
+	</script>
 </body>
 </html>
