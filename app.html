@@ -192,15 +192,28 @@
                 output.innerHTML = outputHTML;
 
                 // --- НАВЕШИВАЕМ ОБРАБОТЧИК НА НОВУЮ КНОПКУ ---
-                const sendBtn = document.getElementById('sendToBotBtn');
-                if (sendBtn) {
-                    sendBtn.addEventListener('click', function() {
-                        // Отправляем в бот собранный текст с данными
-                        tg.sendData(userInfoText);
-                        // Показываем уведомление об отправке
-                        tg.showAlert('✅ Данные отправлены в бот! Проверьте чат.');
-                    });
-                }
+const sendBtn = document.getElementById('sendToBotBtn');
+if (sendBtn) {
+    sendBtn.addEventListener('click', function() {
+        // --- ЛОГИРОВАНИЕ В КОНСОЛЬ ---
+        console.log('🔴 КНОПКА НАЖАТА!');
+        console.log('🔴 Данные для отправки:', userInfoText);
+        console.log('🔴 Длина данных:', userInfoText.length);
+        console.log('🔴 Объект tg:', tg);
+        console.log('🔴 Метод sendData доступен?', typeof tg.sendData);
+        
+        try {
+            // Отправляем в бот собранный текст с данными
+            tg.sendData(userInfoText);
+            console.log('✅ sendData() выполнен успешно!');
+        } catch (error) {
+            console.error('❌ Ошибка при отправке sendData():', error);
+        }
+        
+        // Показываем уведомление об отправке
+        tg.showAlert('✅ Данные отправлены в бот! Проверьте чат.');
+    });
+}
 
             } else {
                 output.textContent = '❌ Не удалось получить данные пользователя.';
