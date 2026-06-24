@@ -5,28 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мини-приложение для Telegram</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             max-width: 400px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000000);
         }
         .container {
-            background-color: white;
+            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        h2 {
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #000000);
+        }
         .user-info {
-            background-color: #e3f2fd;
+            background-color: var(--tg-theme-bg-color, #e3f2fd);
             padding: 15px;
             border-radius: 8px;
             margin: 15px 0;
         }
         .btn {
-            background-color: #0088cc;
-            color: white;
+            background-color: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
             padding: 12px 20px;
             border-radius: 8px;
@@ -34,13 +44,13 @@
             cursor: pointer;
             width: 100%;
             margin: 5px 0;
-            transition: background-color 0.2s;
+            transition: opacity 0.2s;
         }
         .btn:hover {
-            background-color: #006699;
+            opacity: 0.8;
         }
         .btn:disabled {
-            background-color: #cccccc;
+            opacity: 0.5;
             cursor: not-allowed;
         }
         .btn-success {
@@ -50,7 +60,7 @@
             background-color: #218838;
         }
         .data-display {
-            background-color: #f8f9fa;
+            background-color: var(--tg-theme-bg-color, #f8f9fa);
             padding: 15px;
             border-radius: 8px;
             margin: 10px 0;
@@ -58,6 +68,25 @@
             font-size: 14px;
             white-space: pre-wrap;
             word-break: break-all;
+            display: none;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
         }
     </style>
 </head>
@@ -65,18 +94,18 @@
     <div class="container">
         <h2>📱 Мини-приложение</h2>
         
-        <div class="user-info" id="userInfo">
+        <div class="user-info">
             <strong>👤 Информация о пользователе:</strong>
             <div id="userData">Загрузка...</div>
         </div>
 
         <button class="btn" id="getDataBtn">📊 Получить данные пользователя</button>
         
-        <div id="dataDisplay" style="display: none;" class="data-display"></div>
+        <div id="dataDisplay" class="data-display"></div>
         
         <button class="btn btn-success" id="sendDataBtn" disabled>📤 Отправить данные в бота</button>
         
-        <div id="status" style="margin-top: 10px; padding: 10px; border-radius: 8px;"></div>
+        <div id="status" class="status"></div>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -84,10 +113,16 @@
         // Инициализируем Telegram WebApp
         const tg = window.Telegram.WebApp;
         
-        // Расширяем приложение на весь экран
+        // Расширяем приложение
         tg.expand();
         
-        // Получаем данные пользователя из Telegram
+        // Показываем кнопку "Закрыть" в Telegram
+        tg.MainButton.text = "Закрыть";
+        tg.MainButton.onClick(() => {
+            tg.close();
+        });
+        tg.MainButton.show();
+        
         let userData = null;
         
         // Функция для получения данных пользователя
@@ -158,15 +193,18 @@ Username: @${userData.username}
                 // Отправляем данные через Telegram WebApp
                 tg.sendData(message);
                 
-                showStatus('📤 Данные отправлены в бота!', 'success');
+                showStatus('📤 Данные отправлены!', 'success');
                 
-                // Показываем уведомление в Telegram
+                // Показываем MainButton для закрытия
+                tg.MainButton.text = "Закрыть";
+                tg.MainButton.show();
+                
+                // Показываем уведомление
                 tg.showAlert('✅ Данные успешно отправлены в бота!');
                 
-                // Закрываем приложение через 2 секунды
-                setTimeout(() => {
-                    tg.close();
-                }, 2000);
+                // Меняем текст кнопки
+                document.getElementById('sendDataBtn').disabled = true;
+                document.getElementById('sendDataBtn').textContent = '✅ Отправлено!';
                 
             } catch (error) {
                 console.error('Ошибка отправки данных:', error);
@@ -179,8 +217,7 @@ Username: @${userData.username}
         function showStatus(message, type) {
             const statusElement = document.getElementById('status');
             statusElement.textContent = message;
-            statusElement.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
-            statusElement.style.color = type === 'success' ? '#155724' : '#721c24';
+            statusElement.className = `status status-${type}`;
             statusElement.style.display = 'block';
         }
         
@@ -192,7 +229,6 @@ Username: @${userData.username}
             // Обработчик для кнопки "Получить данные"
             document.getElementById('getDataBtn').addEventListener('click', function() {
                 getUserData();
-                tg.showAlert('🔄 Данные обновлены!');
             });
             
             // Обработчик для кнопки "Отправить данные"
@@ -201,13 +237,14 @@ Username: @${userData.username}
             });
         });
         
-        // Дополнительно: ловим событие закрытия приложения
-        tg.onEvent('viewportChanged', function() {
-            console.log('Viewport changed');
+        // Ловим ошибки
+        tg.onEvent('viewportChanged', function(data) {
+            console.log('Viewport changed:', data);
         });
         
         console.log('✅ Мини-приложение загружено');
         console.log('Данные пользователя:', tg.initDataUnsafe?.user);
+        console.log('Telegram WebApp version:', tg.version);
     </script>
 </body>
 </html>
