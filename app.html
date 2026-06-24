@@ -59,6 +59,12 @@
         .btn-success:hover {
             background-color: #218838;
         }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
         .data-display {
             background-color: var(--tg-theme-bg-color, #f8f9fa);
             padding: 15px;
@@ -88,6 +94,17 @@
             background-color: #d1ecf1;
             color: #0c5460;
         }
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -104,8 +121,11 @@
         <div id="dataDisplay" class="data-display"></div>
         
         <button class="btn btn-success" id="sendDataBtn" disabled>📤 Отправить данные в бота</button>
+        <button class="btn btn-danger" id="sendViaMessageBtn" style="margin-top: 10px;">📤 Альтернативная отправка</button>
+        <button class="btn" id="debugBtn">🐛 Показать отладку</button>
         
         <div id="status" class="status"></div>
+        <div id="debugInfo" class="debug-info"></div>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -124,11 +144,47 @@
         tg.MainButton.show();
         
         let userData = null;
+        let debugLogs = [];
+        
+        // Функция для логирования
+        function debugLog(message, data = null) {
+            const logEntry = {
+                time: new Date().toLocaleTimeString(),
+                message: message,
+                data: data
+            };
+            debugLogs.push(logEntry);
+            console.log(`[${logEntry.time}] ${message}`, data || '');
+            
+            // Обновляем отображение отладки
+            updateDebugDisplay();
+        }
+        
+        // Функция обновления отладки
+        function updateDebugDisplay() {
+            const debugElement = document.getElementById('debugInfo');
+            if (debugElement.style.display === 'block') {
+                debugElement.innerHTML = debugLogs.map(log => 
+                    `<div>[${log.time}] ${log.message} ${log.data ? JSON.stringify(log.data, null, 2) : ''}</div>`
+                ).join('');
+                debugElement.scrollTop = debugElement.scrollHeight;
+            }
+        }
         
         // Функция для получения данных пользователя
         function getUserData() {
             try {
+                debugLog('Получение данных пользователя...');
+                
+                // Проверяем наличие initData
+                if (!tg.initData) {
+                    debugLog('⚠️ initData отсутствует! Приложение может быть открыто не из Telegram');
+                } else {
+                    debugLog('✅ initData найден');
+                }
+                
                 const user = tg.initDataUnsafe?.user;
+                debugLog('Данные пользователя из Telegram:', user);
                 
                 if (user) {
                     userData = {
@@ -165,16 +221,19 @@ Username: @${userData.username}
                     document.getElementById('sendDataBtn').disabled = false;
                     
                     showStatus('✅ Данные получены!', 'success');
+                    debugLog('✅ Данные пользователя успешно получены');
                 } else {
+                    debugLog('❌ Пользователь не найден в initDataUnsafe');
                     showStatus('❌ Не удалось получить данные пользователя', 'error');
                 }
             } catch (error) {
                 console.error('Ошибка получения данных:', error);
+                debugLog('❌ Ошибка получения данных:', error.message);
                 showStatus('❌ Ошибка получения данных: ' + error.message, 'error');
             }
         }
         
-        // Функция отправки данных в бота
+        // Функция отправки данных в бота через sendData
         function sendDataToBot() {
             if (!userData) {
                 showStatus('❌ Сначала получите данные пользователя!', 'error');
@@ -190,14 +249,13 @@ Username: @${userData.username}
 Язык: ${userData.language_code}
 Премиум: ${userData.is_premium ? 'Да' : 'Нет'}`;
                 
+                debugLog('Отправка данных через tg.sendData()', { message });
+                
                 // Отправляем данные через Telegram WebApp
                 tg.sendData(message);
                 
-                showStatus('📤 Данные отправлены!', 'success');
-                
-                // Показываем MainButton для закрытия
-                tg.MainButton.text = "Закрыть";
-                tg.MainButton.show();
+                debugLog('✅ tg.sendData() вызван успешно');
+                showStatus('📤 Данные отправлены через sendData!', 'success');
                 
                 // Показываем уведомление
                 tg.showAlert('✅ Данные успешно отправлены в бота!');
@@ -208,8 +266,34 @@ Username: @${userData.username}
                 
             } catch (error) {
                 console.error('Ошибка отправки данных:', error);
+                debugLog('❌ Ошибка отправки через sendData:', error.message);
                 showStatus('❌ Ошибка отправки: ' + error.message, 'error');
                 tg.showAlert('❌ Ошибка отправки данных: ' + error.message);
+            }
+        }
+        
+        // Альтернативный метод отправки - через WebApp.sendData с другим форматом
+        function sendViaAlternative() {
+            if (!userData) {
+                showStatus('❌ Сначала получите данные пользователя!', 'error');
+                return;
+            }
+            
+            try {
+                // Пробуем отправить в JSON формате
+                const jsonData = JSON.stringify(userData);
+                debugLog('Отправка через альтернативный метод (JSON)', { jsonData });
+                
+                // Вариант 1: отправка как есть
+                tg.sendData(jsonData);
+                
+                debugLog('✅ Альтернативная отправка выполнена');
+                showStatus('📤 Данные отправлены альтернативным методом!', 'success');
+                tg.showAlert('✅ Данные отправлены альтернативным методом!');
+                
+            } catch (error) {
+                debugLog('❌ Ошибка альтернативной отправки:', error.message);
+                showStatus('❌ Ошибка: ' + error.message, 'error');
             }
         }
         
@@ -223,6 +307,11 @@ Username: @${userData.username}
         
         // Навешиваем обработчики событий
         document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🚀 Мини-приложение загружено');
+            debugLog('Telegram WebApp version:', tg.version);
+            debugLog('initData:', tg.initData ? '✅ присутствует' : '❌ отсутствует');
+            debugLog('initDataUnsafe:', tg.initDataUnsafe);
+            
             // При загрузке страницы показываем данные пользователя
             getUserData();
             
@@ -235,6 +324,24 @@ Username: @${userData.username}
             document.getElementById('sendDataBtn').addEventListener('click', function() {
                 sendDataToBot();
             });
+            
+            // Обработчик для альтернативной отправки
+            document.getElementById('sendViaMessageBtn').addEventListener('click', function() {
+                sendViaAlternative();
+            });
+            
+            // Обработчик для кнопки отладки
+            document.getElementById('debugBtn').addEventListener('click', function() {
+                const debugElement = document.getElementById('debugInfo');
+                if (debugElement.style.display === 'none') {
+                    debugElement.style.display = 'block';
+                    updateDebugDisplay();
+                    this.textContent = '🔒 Скрыть отладку';
+                } else {
+                    debugElement.style.display = 'none';
+                    this.textContent = '🐛 Показать отладку';
+                }
+            });
         });
         
         // Ловим ошибки
@@ -243,8 +350,6 @@ Username: @${userData.username}
         });
         
         console.log('✅ Мини-приложение загружено');
-        console.log('Данные пользователя:', tg.initDataUnsafe?.user);
-        console.log('Telegram WebApp version:', tg.version);
     </script>
 </body>
 </html>
