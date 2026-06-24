@@ -3,227 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ryuko App</title>
-    <!-- Подключаем SDK Telegram -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Мини-приложение для Telegram</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            padding: 20px;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 80vh;
-        }
-        .card {
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            padding: 30px;
-            border-radius: 16px;
-            width: 100%;
             max-width: 400px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        .button {
-            background: var(--tg-theme-button-color, #007aff);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 12px 24px;
+        .container {
+            background-color: white;
             border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 12px;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .button:hover {
-            opacity: 0.8;
-        }
-        .button:active {
-            opacity: 0.6;
-        }
-        .output {
-            margin-top: 20px;
-            padding: 12px;
-            background: var(--tg-theme-bg-color, #ffffff);
+        .user-info {
+            background-color: #e3f2fd;
+            padding: 15px;
             border-radius: 8px;
-            border: 1px solid var(--tg-theme-hint-color, #cccccc);
-            min-height: 40px;
+            margin: 15px 0;
+        }
+        .btn {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
             width: 100%;
-            box-sizing: border-box;
-            color: var(--tg-theme-text-color, #000000);
-            text-align: left;
+            margin: 5px 0;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #006699;
+        }
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .data-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
             font-size: 14px;
-            overflow-x: auto;
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .footer { margin-top: 20px; font-size: 14px; color: var(--tg-theme-hint-color, #888888); }
-        a { color: var(--tg-theme-link-color, #007aff); text-decoration: none; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🚀 Ryuko App</h1>
-        <p>Мое первое мини-приложение!</p>
-
-        <!-- Новая кнопка для показа данных пользователя -->
-        <button class="button" id="userDataBtn">Показать мои данные</button>
-
-        <div class="output" id="output">
-            Нажмите на кнопку...
+    <div class="container">
+        <h2>📱 Мини-приложение</h2>
+        
+        <div class="user-info" id="userInfo">
+            <strong>👤 Информация о пользователе:</strong>
+            <div id="userData">Загрузка...</div>
         </div>
 
-        <div class="footer">
-            <a href="https://t.me/RyukoHQ_bot" target="_blank">@RyukoHQ_bot</a>
-        </div>
+        <button class="btn" id="getDataBtn">📊 Получить данные пользователя</button>
+        
+        <div id="dataDisplay" style="display: none;" class="data-display"></div>
+        
+        <button class="btn btn-success" id="sendDataBtn" disabled>📤 Отправить данные в бота</button>
+        
+        <div id="status" style="margin-top: 10px; padding: 10px; border-radius: 8px;"></div>
     </div>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         // Инициализируем Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.ready();
+        
+        // Расширяем приложение на весь экран
         tg.expand();
-
-        const output = document.getElementById('output');
-        const userDataBtn = document.getElementById('userDataBtn');
-
-        // --- ЗАПРОС БИОМЕТРИИ ПРИ ЗАГРУЗКЕ (оставляем как есть) ---
-        if (tg.BiometryManager && tg.BiometryManager.isSupported) {
-            tg.BiometryManager.requestAccess({ reason: 'Для входа в приложение' }, (isAccessGranted) => {
-                if (isAccessGranted) {
-                    tg.BiometryManager.authenticate({ reason: 'Подтвердите вашу личность' }, (isAuthenticated) => {
-                        if (isAuthenticated) {
-                            output.textContent = '✅ Биометрия пройдена. Добро пожаловать!';
-                        } else {
-                            output.textContent = '❌ Биометрия не пройдена. Доступ ограничен.';
-                        }
-                    });
-                } else {
-                    output.textContent = '❌ Доступ к биометрии не предоставлен.';
-                }
-            });
-        } else {
-            tg.showPopup({
-                title: 'Вход',
-                message: 'Введите ваш секретный пароль для доступа к приложению.',
-                buttons: [{ type: 'ok', text: 'Войти' }]
-            }, (buttonId) => {
-                if (buttonId === 'ok') {
-                    output.textContent = '⚠️ Функция проверки пароля требует настройки на сервере.';
-                }
-            });
-        }
-
-        // --- КНОПКА "ПОКАЗАТЬ МОИ ДАННЫЕ" (ОБНОВЛЕНА) ---
-        userDataBtn.addEventListener('click', function() {
-            const initData = tg.initDataUnsafe;
-
-            if (initData && initData.user) {
-                const user = initData.user;
+        
+        // Получаем данные пользователя из Telegram
+        let userData = null;
+        
+        // Функция для получения данных пользователя
+        function getUserData() {
+            try {
+                const user = tg.initDataUnsafe?.user;
                 
-                // Отображение платформы
-                let platformText = tg.platform || '—';
-                const platformMap = {
-                    'ios': 'iOS (iPhone)',
-                    'android': 'Android',
-                    'macos': 'macOS (десктоп)',
-                    'web': 'Веб-версия (браузер)',
-                    'unknown': 'Неизвестно'
-                };
-                platformText = platformMap[platformText] || platformText;
-
-                // --- ФОРМИРУЕМ ДАННЫЕ ДЛЯ ОТПРАВКИ (текст) ---
-                let userInfoText = '📋 Данные пользователя:\n\n';
-                userInfoText += `👤 Имя: ${user.first_name || 'Пользователь'} ${user.last_name || ''}\n`;
-                userInfoText += `🆔 ID: ${user.id}\n`;
-                userInfoText += `👤 Username: @${user.username || '—'}\n`;
-                userInfoText += `🌐 Язык: ${user.language_code || '—'}\n`;
-                userInfoText += `💎 Premium: ${user.is_premium ? 'Да ✅' : 'Нет ❌'}\n`;
-                userInfoText += `🤖 Бот: ${user.is_bot ? 'Да' : 'Нет'}\n`;
-                userInfoText += `📱 Платформа: ${platformText}\n`;
-                userInfoText += `📅 Дата запуска: ${new Date(initData.auth_date * 1000).toLocaleString()}\n`;
-
-                // --- ФОРМИРУЕМ HTML ДЛЯ ОТОБРАЖЕНИЯ (КАРТОЧКА) ---
-                let outputHTML = 
-                    '<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">' +
-                        '<div style="flex: 1; min-width: 0;">' +
-                            '<h3 style="margin: 0 0 4px 0; color: var(--tg-theme-text-color, #000);">Все данные о пользователе:</h3>' +
-                            '<p style="margin: 0 0 4px 0; font-size: 16px; color: var(--tg-theme-text-color, #000);">' + (user.first_name || 'Пользователь') + ' ' + (user.last_name || '') + '</p>' +
-                        '</div>' +
-                        '<div style="flex-shrink: 0;">' +
-                            '<img src="' + (user.photo_url || 'https://via.placeholder.com/80') + '" alt="Фото" style="border-radius: 50%; width: 70px; height: 70px; object-fit: cover; border: 2px solid var(--tg-theme-hint-color, #ccc);">' +
-                        '</div>' +
-                    '</div>' +
-                    '<div style="text-align: left; font-size: 15px; line-height: 1.8;">' +
-                        '<div><strong>🆔 ID:</strong> ' + (user.id || '—') + '</div>' +
-                        '<div><strong>👤 Username:</strong> @' + (user.username || '—') + '</div>' +
-                        '<div><strong>🌐 Язык:</strong> ' + (user.language_code || '—') + '</div>' +
-                        '<div><strong>💎 Premium:</strong> ' + (user.is_premium ? 'Да ✅' : 'Нет ❌') + '</div>' +
-                        '<div><strong>🤖 Бот:</strong> ' + (user.is_bot ? 'Да' : 'Нет') + '</div>' +
-                        '<div><strong>📱 Платформа:</strong> ' + platformText + '</div>' +
-                        '<div><strong>📅 Дата запуска:</strong> ' + new Date(initData.auth_date * 1000).toLocaleString() + '</div>' +
-                        '<div><strong>📦 Версия WebApp:</strong> ' + (tg.version || '—') + '</div>' +
-                        '<div><strong>🎨 Тема:</strong> ' + (tg.colorScheme || '—') + '</div>' +
-                    '</div>' +
-                    // --- НОВАЯ КНОПКА ДЛЯ ОТПРАВКИ ДАННЫХ В БОТ (внутри карточки) ---
-                    '<button id="sendToBotBtn" style="background: var(--tg-theme-button-color, #007aff); color: var(--tg-theme-button-text-color, #ffffff); border: none; padding: 12px 24px; border-radius: 12px; font-size: 18px; font-weight: 600; width: 100%; margin-top: 15px; cursor: pointer; transition: opacity 0.2s;">📤 Отправить данные в бот</button>' +
-                    '<details style="margin-top: 15px; color: var(--tg-theme-hint-color, #888); font-size: 13px;">' +
-                        '<summary style="cursor: pointer;">🔧 Техническая информация</summary>' +
-                        '<pre style="white-space: pre-wrap; word-break: break-all; background: var(--tg-theme-bg-color, #fff); padding: 10px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #ccc); font-size: 12px; margin-top: 8px;">' +
-                            '📋 Хэш: ' + (initData.hash || '—') + '\n' +
-                            '🆔 Query ID: ' + (initData.query_id || '—') + '\n' +
-                            '🔗 Start Param: ' + (initData.start_param || '—') + '\n' +
-                            '💬 Chat Type: ' + (initData.chat_type || '—') + '\n' +
-                            '📝 Chat Instance: ' + (initData.chat_instance || '—') +
-                        '</pre>' +
-                    '</details>';
-
-                // Вставляем карточку в блок output
-                output.innerHTML = outputHTML;
-
-                // --- НАВЕШИВАЕМ ОБРАБОТЧИК НА НОВУЮ КНОПКУ ---
-const sendBtn = document.getElementById('sendToBotBtn');
-if (sendBtn) {
-    sendBtn.addEventListener('click', function() {
-        // --- ЛОГИРОВАНИЕ В КОНСОЛЬ ---
-        console.log('🔴 КНОПКА НАЖАТА!');
-        console.log('🔴 Данные для отправки:', userInfoText);
-        console.log('🔴 Длина данных:', userInfoText.length);
-        console.log('🔴 Объект tg:', tg);
-        console.log('🔴 Метод sendData доступен?', typeof tg.sendData);
-        
-        try {
-            // Отправляем в бот собранный текст с данными
-            tg.sendData(userInfoText);
-            console.log('✅ sendData() выполнен успешно!');
-        } catch (error) {
-            console.error('❌ Ошибка при отправке sendData():', error);
+                if (user) {
+                    userData = {
+                        id: user.id || 'Не указан',
+                        first_name: user.first_name || 'Не указано',
+                        last_name: user.last_name || 'Не указано',
+                        username: user.username || 'Не указан',
+                        language_code: user.language_code || 'Не указан',
+                        is_premium: user.is_premium || false
+                    };
+                    
+                    // Отображаем данные
+                    const userDataElement = document.getElementById('userData');
+                    userDataElement.innerHTML = `
+                        <div><strong>ID:</strong> ${userData.id}</div>
+                        <div><strong>Имя:</strong> ${userData.first_name}</div>
+                        <div><strong>Фамилия:</strong> ${userData.last_name}</div>
+                        <div><strong>Username:</strong> @${userData.username}</div>
+                        <div><strong>Язык:</strong> ${userData.language_code}</div>
+                        <div><strong>Премиум:</strong> ${userData.is_premium ? '✅ Да' : '❌ Нет'}</div>
+                    `;
+                    
+                    // Показываем данные в красивом формате для отправки
+                    const dataDisplay = document.getElementById('dataDisplay');
+                    dataDisplay.style.display = 'block';
+                    dataDisplay.textContent = `Данные пользователя:
+ID: ${userData.id}
+Имя: ${userData.first_name} ${userData.last_name}
+Username: @${userData.username}
+Язык: ${userData.language_code}
+Премиум: ${userData.is_premium ? 'Да' : 'Нет'}`;
+                    
+                    // Активируем кнопку отправки
+                    document.getElementById('sendDataBtn').disabled = false;
+                    
+                    showStatus('✅ Данные получены!', 'success');
+                } else {
+                    showStatus('❌ Не удалось получить данные пользователя', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка получения данных:', error);
+                showStatus('❌ Ошибка получения данных: ' + error.message, 'error');
+            }
         }
         
-        // Показываем уведомление об отправке
-        tg.showAlert('✅ Данные отправлены в бот! Проверьте чат.');
-    });
-}
-
-            } else {
-                output.textContent = '❌ Не удалось получить данные пользователя.';
+        // Функция отправки данных в бота
+        function sendDataToBot() {
+            if (!userData) {
+                showStatus('❌ Сначала получите данные пользователя!', 'error');
+                return;
             }
+            
+            try {
+                // Формируем сообщение для отправки
+                const message = `Данные пользователя:
+ID: ${userData.id}
+Имя: ${userData.first_name} ${userData.last_name}
+Username: @${userData.username}
+Язык: ${userData.language_code}
+Премиум: ${userData.is_premium ? 'Да' : 'Нет'}`;
+                
+                // Отправляем данные через Telegram WebApp
+                tg.sendData(message);
+                
+                showStatus('📤 Данные отправлены в бота!', 'success');
+                
+                // Показываем уведомление в Telegram
+                tg.showAlert('✅ Данные успешно отправлены в бота!');
+                
+                // Закрываем приложение через 2 секунды
+                setTimeout(() => {
+                    tg.close();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Ошибка отправки данных:', error);
+                showStatus('❌ Ошибка отправки: ' + error.message, 'error');
+                tg.showAlert('❌ Ошибка отправки данных: ' + error.message);
+            }
+        }
+        
+        // Функция для отображения статуса
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+            statusElement.style.color = type === 'success' ? '#155724' : '#721c24';
+            statusElement.style.display = 'block';
+        }
+        
+        // Навешиваем обработчики событий
+        document.addEventListener('DOMContentLoaded', function() {
+            // При загрузке страницы показываем данные пользователя
+            getUserData();
+            
+            // Обработчик для кнопки "Получить данные"
+            document.getElementById('getDataBtn').addEventListener('click', function() {
+                getUserData();
+                tg.showAlert('🔄 Данные обновлены!');
+            });
+            
+            // Обработчик для кнопки "Отправить данные"
+            document.getElementById('sendDataBtn').addEventListener('click', function() {
+                sendDataToBot();
+            });
         });
-
-        // --- ОБРАБОТКА НАЖАТИЯ НАЗАД ---
-        tg.onEvent('backButtonClicked', function() {
-            tg.close();
+        
+        // Дополнительно: ловим событие закрытия приложения
+        tg.onEvent('viewportChanged', function() {
+            console.log('Viewport changed');
         });
-	</script>
+        
+        console.log('✅ Мини-приложение загружено');
+        console.log('Данные пользователя:', tg.initDataUnsafe?.user);
+    </script>
 </body>
 </html>
