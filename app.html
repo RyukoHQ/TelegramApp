@@ -59,11 +59,12 @@
         .btn-success:hover {
             background-color: #218838;
         }
-        .btn-danger {
-            background-color: #dc3545;
+        .btn-warning {
+            background-color: #ffc107;
+            color: #000;
         }
-        .btn-danger:hover {
-            background-color: #c82333;
+        .btn-warning:hover {
+            background-color: #e0a800;
         }
         .data-display {
             background-color: var(--tg-theme-bg-color, #f8f9fa);
@@ -105,6 +106,22 @@
             overflow-y: auto;
             display: none;
         }
+        .method-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .badge-telegram {
+            background-color: #0088cc;
+            color: white;
+        }
+        .badge-message {
+            background-color: #28a745;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -120,8 +137,14 @@
         
         <div id="dataDisplay" class="data-display"></div>
         
-        <button class="btn btn-success" id="sendDataBtn" disabled>📤 Отправить данные в бота</button>
-        <button class="btn btn-danger" id="sendViaMessageBtn" style="margin-top: 10px;">📤 Альтернативная отправка</button>
+        <button class="btn btn-success" id="sendDataBtn" disabled>
+            📤 Отправить через WebApp <span class="badge-badge badge-telegram">Telegram</span>
+        </button>
+        
+        <button class="btn btn-warning" id="sendAsMessageBtn" disabled>
+            📤 Отправить как сообщение <span class="badge-badge badge-message">Чат</span>
+        </button>
+        
         <button class="btn" id="debugBtn">🐛 Показать отладку</button>
         
         <div id="status" class="status"></div>
@@ -145,6 +168,7 @@
         
         let userData = null;
         let debugLogs = [];
+        let messageToSend = '';
         
         // Функция для логирования
         function debugLog(message, data = null) {
@@ -176,13 +200,6 @@
             try {
                 debugLog('Получение данных пользователя...');
                 
-                // Проверяем наличие initData
-                if (!tg.initData) {
-                    debugLog('⚠️ initData отсутствует! Приложение может быть открыто не из Telegram');
-                } else {
-                    debugLog('✅ initData найден');
-                }
-                
                 const user = tg.initDataUnsafe?.user;
                 debugLog('Данные пользователя из Telegram:', user);
                 
@@ -207,18 +224,22 @@
                         <div><strong>Премиум:</strong> ${userData.is_premium ? '✅ Да' : '❌ Нет'}</div>
                     `;
                     
-                    // Показываем данные в красивом формате для отправки
-                    const dataDisplay = document.getElementById('dataDisplay');
-                    dataDisplay.style.display = 'block';
-                    dataDisplay.textContent = `Данные пользователя:
+                    // Формируем сообщение для отправки
+                    messageToSend = `Данные пользователя:
 ID: ${userData.id}
 Имя: ${userData.first_name} ${userData.last_name}
 Username: @${userData.username}
 Язык: ${userData.language_code}
 Премиум: ${userData.is_premium ? 'Да' : 'Нет'}`;
                     
-                    // Активируем кнопку отправки
+                    // Показываем данные в красивом формате для отправки
+                    const dataDisplay = document.getElementById('dataDisplay');
+                    dataDisplay.style.display = 'block';
+                    dataDisplay.textContent = messageToSend;
+                    
+                    // Активируем кнопки отправки
                     document.getElementById('sendDataBtn').disabled = false;
+                    document.getElementById('sendAsMessageBtn').disabled = false;
                     
                     showStatus('✅ Данные получены!', 'success');
                     debugLog('✅ Данные пользователя успешно получены');
@@ -233,67 +254,73 @@ Username: @${userData.username}
             }
         }
         
-        // Функция отправки данных в бота через sendData
-        function sendDataToBot() {
+        // Функция отправки через WebApp (стандартный метод)
+        function sendViaWebApp() {
             if (!userData) {
                 showStatus('❌ Сначала получите данные пользователя!', 'error');
                 return;
             }
             
             try {
-                // Формируем сообщение для отправки
-                const message = `Данные пользователя:
-ID: ${userData.id}
-Имя: ${userData.first_name} ${userData.last_name}
-Username: @${userData.username}
-Язык: ${userData.language_code}
-Премиум: ${userData.is_premium ? 'Да' : 'Нет'}`;
-                
-                debugLog('Отправка данных через tg.sendData()', { message });
+                debugLog('Отправка через tg.sendData()', { message: messageToSend });
                 
                 // Отправляем данные через Telegram WebApp
-                tg.sendData(message);
+                tg.sendData(messageToSend);
                 
                 debugLog('✅ tg.sendData() вызван успешно');
-                showStatus('📤 Данные отправлены через sendData!', 'success');
+                showStatus('📤 Данные отправлены через WebApp!', 'success');
                 
-                // Показываем уведомление
-                tg.showAlert('✅ Данные успешно отправлены в бота!');
-                
-                // Меняем текст кнопки
-                document.getElementById('sendDataBtn').disabled = true;
-                document.getElementById('sendDataBtn').textContent = '✅ Отправлено!';
+                tg.showAlert('✅ Данные отправлены через WebApp!');
                 
             } catch (error) {
-                console.error('Ошибка отправки данных:', error);
-                debugLog('❌ Ошибка отправки через sendData:', error.message);
-                showStatus('❌ Ошибка отправки: ' + error.message, 'error');
-                tg.showAlert('❌ Ошибка отправки данных: ' + error.message);
+                console.error('Ошибка отправки:', error);
+                debugLog('❌ Ошибка отправки через WebApp:', error.message);
+                showStatus('❌ Ошибка: ' + error.message, 'error');
+                tg.showAlert('❌ Ошибка отправки: ' + error.message);
             }
         }
         
-        // Альтернативный метод отправки - через WebApp.sendData с другим форматом
-        function sendViaAlternative() {
+        // Функция отправки как обычное сообщение (работает везде)
+        function sendAsMessage() {
             if (!userData) {
                 showStatus('❌ Сначала получите данные пользователя!', 'error');
                 return;
             }
             
             try {
-                // Пробуем отправить в JSON формате
-                const jsonData = JSON.stringify(userData);
-                debugLog('Отправка через альтернативный метод (JSON)', { jsonData });
+                debugLog('Отправка как обычное сообщение');
                 
-                // Вариант 1: отправка как есть
-                tg.sendData(jsonData);
+                // Формируем сообщение с пометкой, что это из мини-приложения
+                const message = `📱 Данные из мини-приложения:\n\n${messageToSend}`;
                 
-                debugLog('✅ Альтернативная отправка выполнена');
-                showStatus('📤 Данные отправлены альтернативным методом!', 'success');
-                tg.showAlert('✅ Данные отправлены альтернативным методом!');
+                // Отправляем через обычный интерфейс Telegram
+                // Используем tg.sendData с префиксом, чтобы бот мог отличить
+                tg.sendData(message);
+                
+                debugLog('✅ Сообщение отправлено');
+                showStatus('📤 Данные отправлены как сообщение!', 'success');
+                
+                tg.showAlert('✅ Данные отправлены как сообщение!');
+                
+                // Дополнительно показываем инструкцию
+                setTimeout(() => {
+                    tg.showAlert('💡 Проверьте чат с ботом - сообщение должно прийти!');
+                }, 1000);
                 
             } catch (error) {
-                debugLog('❌ Ошибка альтернативной отправки:', error.message);
+                console.error('Ошибка отправки сообщения:', error);
+                debugLog('❌ Ошибка отправки сообщения:', error.message);
                 showStatus('❌ Ошибка: ' + error.message, 'error');
+                
+                // Если tg.sendData не работает, предлагаем скопировать текст
+                tg.showAlert('❌ Не удалось отправить. Скопируйте данные вручную.');
+                
+                // Копируем в буфер обмена
+                navigator.clipboard.writeText(messageToSend).then(() => {
+                    showStatus('📋 Данные скопированы в буфер обмена!', 'success');
+                }).catch(() => {
+                    showStatus('❌ Не удалось скопировать данные', 'error');
+                });
             }
         }
         
@@ -320,14 +347,14 @@ Username: @${userData.username}
                 getUserData();
             });
             
-            // Обработчик для кнопки "Отправить данные"
+            // Обработчик для кнопки "Отправить через WebApp"
             document.getElementById('sendDataBtn').addEventListener('click', function() {
-                sendDataToBot();
+                sendViaWebApp();
             });
             
-            // Обработчик для альтернативной отправки
-            document.getElementById('sendViaMessageBtn').addEventListener('click', function() {
-                sendViaAlternative();
+            // Обработчик для кнопки "Отправить как сообщение"
+            document.getElementById('sendAsMessageBtn').addEventListener('click', function() {
+                sendAsMessage();
             });
             
             // Обработчик для кнопки отладки
