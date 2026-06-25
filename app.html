@@ -15,7 +15,7 @@
     }
 
     .card {
-      max-width: 850px;
+      max-width: 600px;
       margin: 0 auto;
       background: #fff;
       border-radius: 16px;
@@ -36,24 +36,6 @@
       word-break: break-word;
     }
 
-    .title {
-      margin-top: 24px;
-      margin-bottom: 8px;
-      font-weight: bold;
-      font-size: 18px;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 100px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 15px;
-      resize: vertical;
-    }
-
     button {
       margin-top: 20px;
       width: 100%;
@@ -66,27 +48,12 @@
       color: white;
     }
 
-    button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
     pre {
       white-space: pre-wrap;
       word-break: break-word;
       background: #f7f7f7;
       padding: 12px;
       border-radius: 12px;
-      overflow-x: auto;
-      font-size: 13px;
-    }
-
-    .status {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 12px;
-      background: #eef6ff;
-      word-break: break-word;
     }
   </style>
 </head>
@@ -94,136 +61,53 @@
   <div class="card">
     <h1>Telegram Mini App</h1>
 
-    <div class="title">Информация о пользователе</div>
-    <div id="user-info">Загрузка...</div>
-
-    <div class="title">Комментарий</div>
-    <textarea id="comment" placeholder="Например: тест отправки данных из Mini App"></textarea>
+    <div id="user-info">Загрузка данных пользователя...</div>
 
     <button id="send-btn">Отправить данные в бота</button>
-
-    <div class="status" id="status">Ожидание действия...</div>
-
-    <div class="title">Отладка Telegram.WebApp</div>
-    <pre id="debug-info">Загрузка...</pre>
   </div>
 
   <script>
-    const tg = window.Telegram?.WebApp;
-    const userInfoBlock = document.getElementById("user-info");
-    const debugInfoBlock = document.getElementById("debug-info");
-    const sendBtn = document.getElementById("send-btn");
-    const statusBlock = document.getElementById("status");
-    const commentInput = document.getElementById("comment");
-
-    // =========================
-    // ВАЖНО:
-    // ЛОКАЛЬНЫЙ ТЕСТОВЫЙ URL ДЛЯ MAC
-    // Если потом перенесёшь backend на сервер —
-    // просто замени этот адрес.
-    // =========================
-    const BACKEND_URL = "http://127.0.0.1:8000/send-to-bot";
-
-    if (!tg) {
-      userInfoBlock.innerHTML = `
-        <div class="row">Telegram WebApp API не найден.</div>
-      `;
-      debugInfoBlock.textContent = "window.Telegram.WebApp отсутствует";
-      throw new Error("Telegram WebApp API not found");
-    }
-
-    tg.ready();
+    const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const initDataUnsafe = tg.initDataUnsafe || {};
-    const initData = tg.initData || "";
-    const detectedUser = initDataUnsafe.user || initDataUnsafe.receiver || null;
+    const userInfoBlock = document.getElementById("user-info");
+    const sendBtn = document.getElementById("send-btn");
 
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
-    }
+    // Пользователь, открывший Mini App
+    const user = tg.initDataUnsafe?.user || null;
 
     function renderUser(user) {
       if (!user) {
         userInfoBlock.innerHTML = `
           <div class="row">
-            Пользователь не найден в Telegram initData.
+            Mini App открыт не из Telegram или Telegram не передал user-данные.
           </div>
         `;
         return;
       }
 
       userInfoBlock.innerHTML = `
-        <div class="row"><b>ID:</b> ${escapeHtml(user.id ?? "-")}</div>
-        <div class="row"><b>Имя:</b> ${escapeHtml(user.first_name ?? "-")}</div>
-        <div class="row"><b>Фамилия:</b> ${escapeHtml(user.last_name ?? "-")}</div>
-        <div class="row"><b>Username:</b> ${escapeHtml(user.username ?? "-")}</div>
-        <div class="row"><b>Язык:</b> ${escapeHtml(user.language_code ?? "-")}</div>
-        <div class="row"><b>allows_write_to_pm:</b> ${escapeHtml(user.allows_write_to_pm ?? false)}</div>
+        <div class="row"><b>ID:</b> ${user.id ?? "-"}</div>
+        <div class="row"><b>Имя:</b> ${user.first_name ?? "-"}</div>
+        <div class="row"><b>Фамилия:</b> ${user.last_name ?? "-"}</div>
+        <div class="row"><b>Username:</b> ${user.username ?? "-"}</div>
+        <div class="row"><b>Язык:</b> ${user.language_code ?? "-"}</div>
+        <div class="row"><b>is_premium:</b> ${user.is_premium ?? false}</div>
       `;
     }
 
-    const debugPayload = {
-      platform: tg.platform,
-      version: tg.version,
-      colorScheme: tg.colorScheme,
-      initDataPresent: !!initData,
-      initDataLength: initData.length,
-      initDataUnsafe: initDataUnsafe,
-      detectedUser: detectedUser
-    };
+    renderUser(user);
 
-    renderUser(detectedUser);
-    debugInfoBlock.textContent = JSON.stringify(debugPayload, null, 2);
+    sendBtn.addEventListener("click", () => {
+      const payload = {
+        source: "telegram-mini-app",
+        action: "send_user_data",
+        user: user,
+        opened_at: new Date().toISOString()
+      };
 
-    async function sendDataToBackend() {
-      if (!detectedUser) {
-        statusBlock.textContent = "Не удалось отправить: Telegram user не найден.";
-        return;
-      }
-
-      sendBtn.disabled = true;
-      statusBlock.textContent = "Отправка данных в backend...";
-
-      try {
-        // ВАЖНО:
-        // chat_id берём из Telegram user.id.
-        // Для личного чата с ботом этого достаточно:
-        // бот отправит сообщение именно этому пользователю.
-        const payload = {
-          chat_id: detectedUser.id,
-          user: detectedUser,
-          comment: commentInput.value || "",
-          initData: initData
-        };
-
-        const response = await fetch(BACKEND_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || !result.ok) {
-          throw new Error(result.error || `HTTP ${response.status}`);
-        }
-
-        statusBlock.textContent = "Готово: данные отправлены в бота.";
-      } catch (err) {
-        console.error(err);
-        statusBlock.textContent = "Ошибка отправки: " + err.message;
-      } finally {
-        sendBtn.disabled = false;
-      }
-    }
-
-    sendBtn.addEventListener("click", sendDataToBackend);
+      tg.sendData(JSON.stringify(payload));
+    });
   </script>
 </body>
 </html>
