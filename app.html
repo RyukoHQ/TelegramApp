@@ -15,7 +15,7 @@
     }
 
     .card {
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
       background: #fff;
       border-radius: 16px;
@@ -54,6 +54,14 @@
       background: #f7f7f7;
       padding: 12px;
       border-radius: 12px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+
+    .title {
+      margin-top: 24px;
+      margin-bottom: 8px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -61,48 +69,91 @@
   <div class="card">
     <h1>Telegram Mini App</h1>
 
-    <div id="user-info">Загрузка данных пользователя...</div>
+    <div class="title">Информация о пользователе</div>
+    <div id="user-info">Загрузка...</div>
+
+    <div class="title">Отладка Telegram.WebApp</div>
+    <pre id="debug-info">Загрузка...</pre>
 
     <button id="send-btn">Отправить данные в бота</button>
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    const tg = window.Telegram?.WebApp;
 
     const userInfoBlock = document.getElementById("user-info");
+    const debugInfoBlock = document.getElementById("debug-info");
     const sendBtn = document.getElementById("send-btn");
 
-    // Пользователь, открывший Mini App
-    const user = tg.initDataUnsafe?.user || null;
+    if (!tg) {
+      userInfoBlock.innerHTML = `
+        <div class="row">Telegram WebApp API не найден.</div>
+      `;
+      debugInfoBlock.textContent = "window.Telegram.WebApp отсутствует";
+      throw new Error("Telegram WebApp API not found");
+    }
+
+    tg.ready();
+    tg.expand();
+
+    const initDataUnsafe = tg.initDataUnsafe || {};
+    const initData = tg.initData || "";
+
+    // Пытаемся найти пользователя в нескольких местах
+    const detectedUser =
+      initDataUnsafe.user ||
+      initDataUnsafe.receiver ||
+      null;
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
 
     function renderUser(user) {
       if (!user) {
         userInfoBlock.innerHTML = `
           <div class="row">
-            Mini App открыт не из Telegram или Telegram не передал user-данные.
+            Пользователь не найден ни в <b>initDataUnsafe.user</b>, ни в <b>initDataUnsafe.receiver</b>.
           </div>
         `;
         return;
       }
 
       userInfoBlock.innerHTML = `
-        <div class="row"><b>ID:</b> ${user.id ?? "-"}</div>
-        <div class="row"><b>Имя:</b> ${user.first_name ?? "-"}</div>
-        <div class="row"><b>Фамилия:</b> ${user.last_name ?? "-"}</div>
-        <div class="row"><b>Username:</b> ${user.username ?? "-"}</div>
-        <div class="row"><b>Язык:</b> ${user.language_code ?? "-"}</div>
-        <div class="row"><b>is_premium:</b> ${user.is_premium ?? false}</div>
+        <div class="row"><b>ID:</b> ${escapeHtml(user.id ?? "-")}</div>
+        <div class="row"><b>Имя:</b> ${escapeHtml(user.first_name ?? "-")}</div>
+        <div class="row"><b>Фамилия:</b> ${escapeHtml(user.last_name ?? "-")}</div>
+        <div class="row"><b>Username:</b> ${escapeHtml(user.username ?? "-")}</div>
+        <div class="row"><b>Язык:</b> ${escapeHtml(user.language_code ?? "-")}</div>
+        <div class="row"><b>is_premium:</b> ${escapeHtml(user.is_premium ?? false)}</div>
       `;
     }
 
-    renderUser(user);
+    const debugPayload = {
+      platform: tg.platform,
+      version: tg.version,
+      colorScheme: tg.colorScheme,
+      initDataPresent: !!initData,
+      initDataLength: initData.length,
+      initDataUnsafe: initDataUnsafe,
+      detectedUser: detectedUser
+    };
+
+    renderUser(detectedUser);
+    debugInfoBlock.textContent = JSON.stringify(debugPayload, null, 2);
 
     sendBtn.addEventListener("click", () => {
       const payload = {
         source: "telegram-mini-app",
-        action: "send_user_data",
-        user: user,
+        action: "send_debug_data",
+        detectedUser: detectedUser,
+        initDataUnsafe: initDataUnsafe,
+        initDataLength: initData.length,
+        platform: tg.platform,
+        version: tg.version,
         opened_at: new Date().toISOString()
       };
 
