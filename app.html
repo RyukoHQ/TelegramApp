@@ -1,382 +1,113 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мини-приложение для Telegram</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #000000);
-        }
-        .container {
-            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            margin-bottom: 20px;
-            color: var(--tg-theme-text-color, #000000);
-        }
-        .user-info {
-            background-color: var(--tg-theme-bg-color, #e3f2fd);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-        .btn {
-            background-color: var(--tg-theme-button-color, #0088cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            margin: 5px 0;
-            transition: opacity 0.2s;
-        }
-        .btn:hover {
-            opacity: 0.8;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .btn-success {
-            background-color: #28a745;
-        }
-        .btn-success:hover {
-            background-color: #218838;
-        }
-        .btn-warning {
-            background-color: #ffc107;
-            color: #000;
-        }
-        .btn-warning:hover {
-            background-color: #e0a800;
-        }
-        .data-display {
-            background-color: var(--tg-theme-bg-color, #f8f9fa);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-family: monospace;
-            font-size: 14px;
-            white-space: pre-wrap;
-            word-break: break-all;
-            display: none;
-        }
-        .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            display: none;
-        }
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .status-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-        .debug-info {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            font-size: 12px;
-            font-family: monospace;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-        .method-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-        .badge-telegram {
-            background-color: #0088cc;
-            color: white;
-        }
-        .badge-message {
-            background-color: #28a745;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      background: #f5f5f5;
+      color: #222;
+    }
+
+    .card {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+    }
+
+    .row {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f7f7f7;
+      border-radius: 10px;
+      word-break: break-word;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #2481cc;
+      color: white;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #f7f7f7;
+      padding: 12px;
+      border-radius: 12px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>📱 Мини-приложение</h2>
-        
-        <div class="user-info">
-            <strong>👤 Информация о пользователе:</strong>
-            <div id="userData">Загрузка...</div>
-        </div>
+  <div class="card">
+    <h1>Telegram Mini App</h1>
 
-        <button class="btn" id="getDataBtn">📊 Получить данные пользователя</button>
-        
-        <div id="dataDisplay" class="data-display"></div>
-        
-        <button class="btn btn-success" id="sendDataBtn" disabled>
-            📤 Отправить через WebApp <span class="badge-badge badge-telegram">Telegram</span>
-        </button>
-        
-        <button class="btn btn-warning" id="sendAsMessageBtn" disabled>
-            📤 Отправить как сообщение <span class="badge-badge badge-message">Чат</span>
-        </button>
-        
-        <button class="btn" id="debugBtn">🐛 Показать отладку</button>
-        
-        <div id="status" class="status"></div>
-        <div id="debugInfo" class="debug-info"></div>
-    </div>
+    <div id="user-info">Загрузка данных пользователя...</div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        // Инициализируем Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        
-        // Расширяем приложение
-        tg.expand();
-        
-        // Показываем кнопку "Закрыть" в Telegram
-        tg.MainButton.text = "Закрыть";
-        tg.MainButton.onClick(() => {
-            tg.close();
-        });
-        tg.MainButton.show();
-        
-        let userData = null;
-        let debugLogs = [];
-        let messageToSend = '';
-        
-        // Функция для логирования
-        function debugLog(message, data = null) {
-            const logEntry = {
-                time: new Date().toLocaleTimeString(),
-                message: message,
-                data: data
-            };
-            debugLogs.push(logEntry);
-            console.log(`[${logEntry.time}] ${message}`, data || '');
-            
-            // Обновляем отображение отладки
-            updateDebugDisplay();
-        }
-        
-        // Функция обновления отладки
-        function updateDebugDisplay() {
-            const debugElement = document.getElementById('debugInfo');
-            if (debugElement.style.display === 'block') {
-                debugElement.innerHTML = debugLogs.map(log => 
-                    `<div>[${log.time}] ${log.message} ${log.data ? JSON.stringify(log.data, null, 2) : ''}</div>`
-                ).join('');
-                debugElement.scrollTop = debugElement.scrollHeight;
-            }
-        }
-        
-        // Функция для получения данных пользователя
-        function getUserData() {
-            try {
-                debugLog('Получение данных пользователя...');
-                
-                const user = tg.initDataUnsafe?.user;
-                debugLog('Данные пользователя из Telegram:', user);
-                
-                if (user) {
-                    userData = {
-                        id: user.id || 'Не указан',
-                        first_name: user.first_name || 'Не указано',
-                        last_name: user.last_name || 'Не указано',
-                        username: user.username || 'Не указан',
-                        language_code: user.language_code || 'Не указан',
-                        is_premium: user.is_premium || false
-                    };
-                    
-                    // Отображаем данные
-                    const userDataElement = document.getElementById('userData');
-                    userDataElement.innerHTML = `
-                        <div><strong>ID:</strong> ${userData.id}</div>
-                        <div><strong>Имя:</strong> ${userData.first_name}</div>
-                        <div><strong>Фамилия:</strong> ${userData.last_name}</div>
-                        <div><strong>Username:</strong> @${userData.username}</div>
-                        <div><strong>Язык:</strong> ${userData.language_code}</div>
-                        <div><strong>Премиум:</strong> ${userData.is_premium ? '✅ Да' : '❌ Нет'}</div>
-                    `;
-                    
-                    // Формируем сообщение для отправки
-                    messageToSend = `Данные пользователя:
-ID: ${userData.id}
-Имя: ${userData.first_name} ${userData.last_name}
-Username: @${userData.username}
-Язык: ${userData.language_code}
-Премиум: ${userData.is_premium ? 'Да' : 'Нет'}`;
-                    
-                    // Показываем данные в красивом формате для отправки
-                    const dataDisplay = document.getElementById('dataDisplay');
-                    dataDisplay.style.display = 'block';
-                    dataDisplay.textContent = messageToSend;
-                    
-                    // Активируем кнопки отправки
-                    document.getElementById('sendDataBtn').disabled = false;
-                    document.getElementById('sendAsMessageBtn').disabled = false;
-                    
-                    showStatus('✅ Данные получены!', 'success');
-                    debugLog('✅ Данные пользователя успешно получены');
-                } else {
-                    debugLog('❌ Пользователь не найден в initDataUnsafe');
-                    showStatus('❌ Не удалось получить данные пользователя', 'error');
-                }
-            } catch (error) {
-                console.error('Ошибка получения данных:', error);
-                debugLog('❌ Ошибка получения данных:', error.message);
-                showStatus('❌ Ошибка получения данных: ' + error.message, 'error');
-            }
-        }
-        
-        // Функция отправки через WebApp (стандартный метод)
-        function sendViaWebApp() {
-            if (!userData) {
-                showStatus('❌ Сначала получите данные пользователя!', 'error');
-                return;
-            }
-            
-            try {
-                debugLog('Отправка через tg.sendData()', { message: messageToSend });
-                
-                // Отправляем данные через Telegram WebApp
-                tg.sendData(messageToSend);
-                
-                debugLog('✅ tg.sendData() вызван успешно');
-                showStatus('📤 Данные отправлены через WebApp!', 'success');
-                
-                tg.showAlert('✅ Данные отправлены через WebApp!');
-                
-            } catch (error) {
-                console.error('Ошибка отправки:', error);
-                debugLog('❌ Ошибка отправки через WebApp:', error.message);
-                showStatus('❌ Ошибка: ' + error.message, 'error');
-                tg.showAlert('❌ Ошибка отправки: ' + error.message);
-            }
-        }
-        
-        // Функция отправки как обычное сообщение (работает везде)
-        function sendAsMessage() {
-            if (!userData) {
-                showStatus('❌ Сначала получите данные пользователя!', 'error');
-                return;
-            }
-            
-            try {
-                debugLog('Отправка как обычное сообщение');
-                
-                // Формируем сообщение с пометкой, что это из мини-приложения
-                const message = `📱 Данные из мини-приложения:\n\n${messageToSend}`;
-                
-                // Отправляем через обычный интерфейс Telegram
-                // Используем tg.sendData с префиксом, чтобы бот мог отличить
-                tg.sendData(message);
-                
-                debugLog('✅ Сообщение отправлено');
-                showStatus('📤 Данные отправлены как сообщение!', 'success');
-                
-                tg.showAlert('✅ Данные отправлены как сообщение!');
-                
-                // Дополнительно показываем инструкцию
-                setTimeout(() => {
-                    tg.showAlert('💡 Проверьте чат с ботом - сообщение должно прийти!');
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Ошибка отправки сообщения:', error);
-                debugLog('❌ Ошибка отправки сообщения:', error.message);
-                showStatus('❌ Ошибка: ' + error.message, 'error');
-                
-                // Если tg.sendData не работает, предлагаем скопировать текст
-                tg.showAlert('❌ Не удалось отправить. Скопируйте данные вручную.');
-                
-                // Копируем в буфер обмена
-                navigator.clipboard.writeText(messageToSend).then(() => {
-                    showStatus('📋 Данные скопированы в буфер обмена!', 'success');
-                }).catch(() => {
-                    showStatus('❌ Не удалось скопировать данные', 'error');
-                });
-            }
-        }
-        
-        // Функция для отображения статуса
-        function showStatus(message, type) {
-            const statusElement = document.getElementById('status');
-            statusElement.textContent = message;
-            statusElement.className = `status status-${type}`;
-            statusElement.style.display = 'block';
-        }
-        
-        // Навешиваем обработчики событий
-        document.addEventListener('DOMContentLoaded', function() {
-            debugLog('🚀 Мини-приложение загружено');
-            debugLog('Telegram WebApp version:', tg.version);
-            debugLog('initData:', tg.initData ? '✅ присутствует' : '❌ отсутствует');
-            debugLog('initDataUnsafe:', tg.initDataUnsafe);
-            
-            // При загрузке страницы показываем данные пользователя
-            getUserData();
-            
-            // Обработчик для кнопки "Получить данные"
-            document.getElementById('getDataBtn').addEventListener('click', function() {
-                getUserData();
-            });
-            
-            // Обработчик для кнопки "Отправить через WebApp"
-            document.getElementById('sendDataBtn').addEventListener('click', function() {
-                sendViaWebApp();
-            });
-            
-            // Обработчик для кнопки "Отправить как сообщение"
-            document.getElementById('sendAsMessageBtn').addEventListener('click', function() {
-                sendAsMessage();
-            });
-            
-            // Обработчик для кнопки отладки
-            document.getElementById('debugBtn').addEventListener('click', function() {
-                const debugElement = document.getElementById('debugInfo');
-                if (debugElement.style.display === 'none') {
-                    debugElement.style.display = 'block';
-                    updateDebugDisplay();
-                    this.textContent = '🔒 Скрыть отладку';
-                } else {
-                    debugElement.style.display = 'none';
-                    this.textContent = '🐛 Показать отладку';
-                }
-            });
-        });
-        
-        // Ловим ошибки
-        tg.onEvent('viewportChanged', function(data) {
-            console.log('Viewport changed:', data);
-        });
-        
-        console.log('✅ Мини-приложение загружено');
-    </script>
+    <button id="send-btn">Отправить данные в бота</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const userInfoBlock = document.getElementById("user-info");
+    const sendBtn = document.getElementById("send-btn");
+
+    // Пользователь, открывший Mini App
+    const user = tg.initDataUnsafe?.user || null;
+
+    function renderUser(user) {
+      if (!user) {
+        userInfoBlock.innerHTML = `
+          <div class="row">
+            Mini App открыт не из Telegram или Telegram не передал user-данные.
+          </div>
+        `;
+        return;
+      }
+
+      userInfoBlock.innerHTML = `
+        <div class="row"><b>ID:</b> ${user.id ?? "-"}</div>
+        <div class="row"><b>Имя:</b> ${user.first_name ?? "-"}</div>
+        <div class="row"><b>Фамилия:</b> ${user.last_name ?? "-"}</div>
+        <div class="row"><b>Username:</b> ${user.username ?? "-"}</div>
+        <div class="row"><b>Язык:</b> ${user.language_code ?? "-"}</div>
+        <div class="row"><b>is_premium:</b> ${user.is_premium ?? false}</div>
+      `;
+    }
+
+    renderUser(user);
+
+    sendBtn.addEventListener("click", () => {
+      const payload = {
+        source: "telegram-mini-app",
+        action: "send_user_data",
+        user: user,
+        opened_at: new Date().toISOString()
+      };
+
+      tg.sendData(JSON.stringify(payload));
+    });
+  </script>
 </body>
 </html>
